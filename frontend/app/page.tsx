@@ -5,13 +5,24 @@ export default function Home() {
   const [endNode, setEndNode] = useState<{ x: number; y: number, px: number, py: number} | null>(null);
   const [path, setPath] = useState<{px: number, py: number}[]>([]);
   const [algorithm, setAlgorithm] = useState<string>("Dijkstra");
+  const [scale, setScale] = useState(1);
+  const handleWheel = (e: React.WheelEvent) =>{
+  e.preventDefault();
+  const zoomStep= 0.1
+  const newScale = e.deltaY > 0 ? Math.max(scale - zoomStep, 1) : Math.min(scale + zoomStep,5);
+  setScale(newScale); 
+};
+
 
   const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const pixelX = e.clientX - rect.left;
-    const pixelY = e.clientY - rect.top;
-    const gridX = Math.floor((pixelX / rect.width)*400);
-    const gridY = Math.floor((pixelY / rect.height)*300);
+
+    const rawX = e.clientX - rect.left;
+    const rawY = e.clientY - rect.top;
+    const pixelX = rawX / scale;
+    const pixelY = rawY / scale;
+    const gridX = Math.floor((pixelX / 800)*400);
+    const gridY = Math.floor((pixelY / 600)*300);
 
     if(!startNode) {
       setStartNode({ x: gridX, y: gridY, px: pixelX, py: pixelY });
@@ -55,13 +66,14 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen p-6 bg-[#fbfbf9] flex flex-col lg:flex-row gap-6 text-slate-800 font-sans">
+    <main className="h-screen overflow-hidden p-6 bg-[#0b1120]/95 flex flex-row lg:flex-row gap-6 text-slate-200 font-sans relative">
 
       {/* <Map area /> */}
-      <div className="relative w-full lg:w-[70%] bg-[#1a1a1a] rounded-2xl shadow-lg border border-slate-200 overflow-hidden flex items-center justify-center min-h-[700px] cursor-crosshair" onClick={handleMapClick}>
-        <img src="/map.jpg" alt="Zelda Map" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
-        {startNode && (<div className="absolute w-4 h-4 bg-[#22c55e] border-2 border-white rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-lg z-10" style={{ left: startNode.px, top: startNode.py }}/>)}
-        {endNode && (<div className="absolute w-4 h-4 bg-[#ef4444] border-2 border-white rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-lg z-10" style={{ left: endNode.px, top: endNode.py }}/>)}
+      <div className="relative w-[70%] h-full min-h-[500px] bg-[#080d1a] rounded-3xl overflow-auto scrollbar-hide border-2 border-cyan-400 shadow-[0_0_15px_2px_rgba(34,211,238,0.5)]" onWheel={handleWheel}>
+        <div className="relative flex items-center justify-center h-full cursor-crosshair transition-transform duration-75 origin-top-left" style={{ transform: `scale(${scale})`, width:'100%', height:'100%' }} onClick={handleMapClick}>  
+        <img src="/map.jpg" alt="Map" className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-80" />
+        {startNode && (<div className="absolute w-4 h-4 bg-[#22c55e] border-2 border-cyan-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-lg z-10" style={{ left: startNode.px, top: startNode.py }}/>)}
+        {endNode && (<div className="absolute w-4 h-4 bg-[#ef4444] border-2 border-cyan-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-lg z-10" style={{ left: endNode.px, top: endNode.py }}/>)}
         {/* Draw shieka path :D*/}
         {path.length>0 &&(
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 filter drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]">
@@ -88,58 +100,61 @@ export default function Home() {
         </svg>
         )}
       </div>
+    </div>
 
     {/* <Controls /> */}
-    <div className="w-full lg:w-[30%] flex flex-col gap-6">
+    <div className="w-[30%] flex flex-col gap-4 h-full">
 
-      <div className ="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <h2 className="font-bold text-xl mb-4 text-black">Controls</h2>
-        <ol className="text-sm space-y-2 mb-6 text-slate-600 list-decimal list-inside">
-          <li>Click on the map to set starting point</li>
-          <li>Click on the map again to set destination</li>
+      <div className ="bg-[#0f172a] p-5 rounded-3xl border-2 border-cyan-400">
+      <h2 style={{ fontFamily: "'Michroma', sans-serif" }} className="font-bold text-lg mb-4 text-cyan-400 uppercase tracking-widest border-b border-cyan-900 pb-2"> CONTROLS </h2>
+
+        <ol style={{fontFamily: "'Barlow Condensed', sans-serif"}} className="text-sm space-y-1 mb-4 text-slate-400 list-decimal list-inside tracking-wide">
+          <li>Click on the map to set START</li>
+          <li>Click on the map again to set DESTINATION</li>
           <li>Choose an algorithm and run!</li>
         </ol>
 
-        <div className="mb-6 p-3 bg-slate-50 rounded-lg border border-slate-100 text-sm font-mono text-slate-600 space-y-1">
-          <p>Start: {startNode ? `${startNode.x}, ${startNode.y}` : 'Not set'}</p>
-          <p>End: {endNode ? `${endNode.x}, ${endNode.y}` : 'Not set'}</p>
+        <div style={{fontFamily: "'Barlow Condensed', sans-serif"}} className="mb-4 p-3 bg-[#1e293b]/50 border-2 border-cyan-800 text-cyan-300 shadow-inner space-y-1 text-base tracking-wider uppercase rounded-xl">
+          <p className="flex justify-between"><span className="opacity-70">START:</span> <span className="font-bold">{startNode ? `[${startNode.x}, ${startNode.y}]` : '-- : --'}</span></p>
+          <p className="flex justify-between"><span className="opacity-70">DESTINATION:</span> <span className="font-bold">{endNode ? `[${endNode.x}, ${endNode.y}]` : '-- : --'}</span></p>
         </div>
 
-        <h3 className="font-semibold text-sm mb-3 text-black">Select Algorithm</h3>
+        <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif" }} className="font-bold text-sm mb-2 text-cyan-100/60 uppercase tracking-widest">Select Algorithm</h3>
 
-        <div className="flex gap-2 mb-6">
-          <button onClick={() => setAlgorithm("Dijkstra")} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${algorithm === "Dijkstra" ? "bg-black text-white" : "bg-white text-black border border-slate-300 hover:bg-slate-50"}`}>Dijkstra's</button>
-          <button onClick={() => setAlgorithm("A*")} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${algorithm === "A*" ? "bg-black text-white" : "bg-white text-black border border-slate-300 hover:bg-slate-50"}`}>A* Algorithm</button>
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => setAlgorithm("Dijkstra")} style={{ fontFamily: "'Barlow Condensed', sans-serif" }} className={`flex-1 py-2 rounded-lg text-sm font-bold uppercase tracking-widest transition-all ${algorithm === "Dijkstra" ? "bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(34,211,238,0.8)] scale-105" : "bg-[#0b1120] text-cyan-400 border border-cyan-600 border hover:bg-slate-50"}`}>Dijkstra's</button>
+          <button onClick={() => setAlgorithm("A*")} style={{ fontFamily: "'Barlow Condensed', sans-serif" }} className={`flex-1 py-2 rounded-lg text-sm font-bold uppercase tracking-widest transition-all ${algorithm === "A*" ? "bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(34,211,238,0.8)] scale-105" : "bg-[#0b1120] text-cyan-400 border border-cyan-600 border hover:bg-slate-50"}`}>A* Algorithm</button>
         </div>
 
         <div className="flex gap-2">
-          <button onClick={runPathfinding} className="flex-2 bg-black text-white py-2 px-6 rounded-lg text-sm font-medium flex items-center justify-center gap-2 w-full hover:bg-slate-800 transition-colors">
+          <button onClick={runPathfinding} className="flex-2 bg-cyan-500 text-slate-950 py-2 px-6 rounded-lg text-sm font-medium flex items-center justify-center gap-2 w-full hover:bg-cyan-600 transition-colors">
             <span>▶</span> Run Algorithm
           </button>
-          <button onClick={handleReset} className="flex-1 bg-white text-black border border-slate-300 py-2 px-4 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
+          <button onClick={handleReset} className="flex-1 bg-[#1e293b] text-cyan-500 border border-cyan-800 py-2 px-4 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
             <span>⟳</span> Reset
           </button>
         </div>
       </div>
           {/* <Legend /> */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <h2 className="font-bold text-xl mb-4 text-black">Map Legend</h2>
+      <div className="bg-[#0f172a] p-5 flex-1 rounded-3xl border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.4)] overflow-hidden">
+        <h2 style={{ fontFamily: "'Michroma', sans-serif" }} className="font-bold text-lg mb-4 text-cyan-400 uppercase tracking-widest border-b border-cyan-900 pb-2"> MAP LEGEND </h2>
             
-        <h3 className="font-semibold text-sm mb-2 text-black">Terrain Costs</h3>
-        <ul className="text-sm space-y-1 mb-6 text-slate-600">
-           <li>Grass: 1</li>
-          <li>Forest: 2</li>
-          <li>Desert: 3</li>
-          <li>Mountain: 5</li>
-          <li>Water: 10</li>
+        <h3 style={{fontFamily:"'Barlow Condensed', sans-serif"}} className="font-bold text-sm mb-2 text-cyan-100/60 uppercase tracking-widest">Terrain Costs</h3>
+        <ul style={{fontFamily: "'Barlow Condensed', sans-serif"}} className="text-lg space-y-1 mb-4 text-slate-300">
+          <li className="flex justify-between border-b border-cyan-900/30 pb-1"> <span>Grass</span> <span className="text-cyan-400 font-bold">1</span></li>
+          <li className="flex justify-between border-b border-cyan-900/30 pb-1"> <span>Forest</span> <span className="text-cyan-400 font-bold">2</span></li>
+          <li className="flex justify-between border-b border-cyan-900/30 pb-1"> <span>Desert</span> <span className="text-cyan-400 font-bold">3</span></li>
+          <li className="flex justify-between border-b border-cyan-900/30 pb-1"> <span>Mountain</span> <span className="text-cyan-400 font-bold">5</span></li>
+          <li className="flex justify-between border-b border-cyan-900/30 pb-1"> <span>Water</span> <span className="text-cyan-400 font-bold">10</span></li>
         </ul>
 
-        <h3 className="font-semibold text-sm mb-2 text-black">Path States</h3>
-        <ul className="text-sm space-y-3 text-slate-600">
-          <li className="flex items-center gap-3"><span className="w-5 h-5 bg-[#22c55e] rounded border border-black/10"></span> Start</li>
-          <li className="flex items-center gap-3"><span className="w-5 h-5 bg-[#ef4444] rounded border border-black/10"></span> Destination</li>
-          <li className="flex items-center gap-3"><span className="w-5 h-5 bg-[#06b6d4] rounded border border-black/10"></span> Visited</li>
-          <li className="flex items-center gap-3"><span className="w-5 h-5 bg-[#a855f7] rounded border border-black/10"></span> Obstacle</li>
+
+        <h3 style={{fontFamily:"'Barlow Condensed', sans-serif"}} className="font-bold text-sm mb-4 text-cyan-100/60 uppercase tracking-widest">Path States</h3>
+        <ul style={{fontFamily: "'Barlow Condensed', sans-serif"}} className="text-lg space-y-3">
+          <li className="flex items-center gap-3 text-slate-200 uppercase tracking-wider"> <span className="w-3 h-3 bg-[#22c55e] rounded-full shadow-[0_0_8px_#22c55e]"/>Start</li>
+          <li className="flex items-center gap-3 text-slate-200 uppercase tracking-wider"> <span className="w-3 h-3 bg-[#ef4444] rounded-full shadow-[0_0_8px_#ef4444]"/>Destination</li>
+          <li className="flex items-center gap-3 text-slate-200 uppercase tracking-wider"> <span className="w-3 h-3 bg-[#06b6d4] rounded-full shadow-[0_0_8px_#06b6d4]"/>Visited</li>
+          <li className="flex items-center gap-3 text-slate-200 uppercase tracking-wider"><span className="w-3 h-3 bg-[#a855f7] rounded-full shadow-[0_0_8px_#a855f7]"/>Obstacle</li>
         </ul>
       </div>
     </div>
