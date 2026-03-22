@@ -3,6 +3,7 @@
 #include <vector>
 #include <fstream>
 #include <climits>
+#include <algorithm>
 #include "json.hpp"
 using json = nlohmann::json;
 
@@ -40,6 +41,90 @@ int gCost(const std::vector<std::vector<Node>>& grid, int x, int y) {
 }
 
 
+struct HeapNode {
+    int priority;
+    int x;
+    int y;
+};
+
+class MinHeap {
+private:
+    std::vector<HeapNode> heap;
+
+public:
+    bool empty() const {
+        return heap.empty();
+    }
+    HeapNode top() const {
+        return heap[0];
+    }
+    void push(const HeapNode& node) {
+        heap.push_back(node);
+        heapifyUp(heap.size()-1);
+    }
+    void pop() {
+        if (heap.empty()) {
+            return;
+        }
+
+        heap[0] = heap.back();
+
+        heap.pop_back();
+
+        if (!heap.empty()) {
+            heapifyDown(0);
+        }
+
+    }
+
+private:
+    void heapifyUp(int index) {
+        while (index > 0) {
+            int par = (index - 1) / 2;
+
+            if (heap[index].priority < heap[par].priority) {
+                std::swap(heap[index], heap[par]);
+                index = par;
+            }
+
+            else {
+                break;
+            }
+        }
+    }
+    void heapifyDown(int index) {
+        int size = heap.size();
+
+        while (true) {
+            int left = 2 * index + 1;
+            int right = 2 * index + 2;
+            int smallest = index;
+
+            if (left < size && heap[left].priority < heap[smallest].priority) {
+                smallest = left;
+            }
+
+            if (right < size && heap[right].priority < heap[smallest].priority) {
+                smallest = right;
+            }
+
+            if (smallest != index) {
+                std::swap(heap[index], heap[smallest]);
+                index = smallest;
+            }
+
+            else {
+                break;
+            }
+        }
+    }
+};
+
+int heuristic(int x, int y, int endX, int endY) {
+    return std::abs(x - endX) + std::abs(y - endY);
+}
+
+
 int main(int argc, char* argv[]){
 
     if (argc != 6){
@@ -65,13 +150,7 @@ int main(int argc, char* argv[]){
     json data;
     f >> data;
 
-    std::cout << "Loaded JSON" << std::endl;
-
-
-
     std::vector<Node> nodes;
-
-    std::cout << "size = " << data.size() << std::endl;
 
     for (auto& item : data) {
         Node n;
@@ -87,6 +166,12 @@ int main(int argc, char* argv[]){
     int width = 400;
     int height = 300;
 
+    if (startX < 0 || startX >= width || startY < 0 || startY >= height ||
+    endX < 0 || endX >= width || endY < 0 || endY >= height) {
+        std::cout << "[]" << std::endl;
+        return 0;
+    }
+
     std::vector<std::vector<Node>> grid(height, std::vector<Node> (width));
 
     for (const Node& n : nodes) {
@@ -101,85 +186,135 @@ int main(int argc, char* argv[]){
 
     dista[startY][startX] = 0;
 
-    std::cout << grid[0][0].x << " "
-          << grid[0][0].y << " "
-          << grid[0][0].terrain << " "
-          << grid[0][0].weight
-          << std::endl;
+    if (algorithm == "Dijkstra" ||  algorithm == "dijkstra") {
+        MinHeap pq;
+        pq.push({0, startX, startY});
 
-    auto neigh = GNeigh(0, 0, width, height);
+        while (!pq.empty()) {
+            HeapNode cur = pq.top();
+            pq.pop();
+            int curX = cur.x;
+            int curY = cur.y;
 
-    for (auto& p : neigh) {
-        std::cout << "(" << p.first << "," << p.second << ") ";
+            if (visit[curY][curX]) {
+                continue;
+            }
+
+            visit[curY][curX] = true;
+
+            if (curX == endX && curY == endY) {
+                break;
+            }
+
+            auto neighbors = GNeigh(curX, curY, width, height);
+
+            for (auto& p : neighbors) {
+                int nx = p.first;
+                int ny = p.second;
+
+                if (visit[ny][nx]) {
+                    continue;
+                }
+
+                int newDista = dista[curY][curX] + gCost(grid, nx, ny);
+
+                if (newDista < dista[ny][nx]) {
+                    dista[ny][nx] = newDista;
+                    parent[ny][nx] = {curX, curY};
+                    pq.push({newDista, nx, ny});
+                }
+            }
+        }
+    }
+
+    else if (algorithm == "a*" || algorithm == "A*" || algorithm == "astar" || algorithm == "Astar") {
+        MinHeap pq;
+        pq.push({heuristic(startX, startY, endX, endY), startX, startY});
+
+        while (!pq.empty()) {
+            HeapNode cur = pq.top();
+            pq.pop();
+            int curX = cur.x;
+            int curY = cur.y;
+
+            if (visit[curY][curX]) {
+                continue;
+            }
+
+            visit[curY][curX] = true;
+
+            if (curX == endX && curY == endY) {
+                break;
+            }
+
+            auto neighbors = GNeigh(curX, curY, width, height);
+
+            for (auto& p : neighbors) {
+                int nx = p.first;
+                int ny = p.second;
+
+                if (visit[ny][nx]) {
+                    continue;
+                }
+
+                int newDista = dista[curY][curX] + gCost(grid, nx, ny);
+
+                if (newDista < dista[ny][nx]) {
+                    dista[ny][nx] = newDista;
+                    parent[ny][nx] = {curX, curY};
+
+                    int priority = newDista +heuristic(nx, ny, endX, endY);
+                    pq.push({priority, nx, ny});
+                }
+            }
+        }
+    }
+
+    else {
+        std::cerr << "invalid algorithm" << std::endl;
+        return 1;
+    }
+
+    std::vector<std::pair<int, int>> path;
+
+    if (dista[endY][endX] != INT_MAX) {
+        int cx = endX;
+        int cy = endY;
+
+        while (!(cx == startX && cy == startY)) {
+            path.push_back({cx, cy});
+
+            auto par = parent[cy][cx];
+
+            if (par.first == -1 && par.second == -1) {
+                break;
+            }
+
+            cx = par.first;
+            cy = par.second;
+        }
+
+        path.push_back({startX, startY});
+        std::reverse(path.begin(), path.end());
     }
 
 
-    std::cout << std::endl;
+    std::cout << "[";
+    for (size_t i = 0; i < path.size(); i++) {
 
-    auto neigh2 = GNeigh(10, 10, width, height);
+        std::cout << "{\"px\": "
+                  << path[i].first
+                  <<", \"py\": "
+                  <<path[i].second
+                  << "}";
 
-    for (auto& p : neigh2) {
-        std::cout << "(" << p.first << "," << p.second << ") ";
+        if (i + 1 < path.size()) {
+            std::cout << ",";
+        }
     }
 
-    std::cout << std::endl;
+    std::cout << "]" << std::endl;
 
-    std::cout << "Cost (0,0) = "
-          << gCost(grid, 0, 0)
-          << std::endl;
-
-    std::cout << "Cost (10,10) = "
-              << gCost(grid, 10, 10)
-              << std::endl;
-
-    for (auto& p : neigh2) {
-        int cost = gCost(grid, p.first, p.second);
-
-        std::cout << "Neighbor "
-                  << p.first << "," << p.second
-                  << " cost = "
-                  << cost
-                  << std::endl;
-    }
-
-    std::vector<std::pair<int,int>> tests = {
-        {0,0},
-        {1,1},
-        {5,5},
-        {10,10},
-        {50,50},
-        {100,100},
-        {150,100},
-        {200,150},
-        {250,200},
-        {300,200},
-        {350,250},
-        {399,299}
-    };
-
-    std::cout << "\n=== COST TESTS ===\n";
-
-    for (auto& t : tests) {
-        int x = t.first;
-        int y = t.second;
-
-        std::cout
-            << "(" << x << "," << y << ") "
-            << grid[y][x].terrain << " "
-            << grid[y][x].weight
-            << std::endl;
-    }
-
-
-    std::cout << "dist start = " << dista[startY][startX] << std::endl;
-    std::cout << "dist 0,0 = " << dista[0][0] << std::endl;
-    std::cout << "visited start = " << visit[startY][startX] << std::endl;
-    std::cout << "parent start = ("
-              << parent[startY][startX].first << ","
-              << parent[startY][startX].second << ")"
-              << std::endl;
-
-
-    std::cout<< "[{\"px\": 100, \"py\": 100}, {\"px\": 200, \"py\": 200}]" << std::endl;
     return 0;
 }
+

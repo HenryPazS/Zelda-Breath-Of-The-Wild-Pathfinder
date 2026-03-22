@@ -1,6 +1,6 @@
 "use client";
 import {useState} from "react";
-import {useRef, useEffect} from "react";
+import {useRef} from "react";
 export default function Home() {
   const [startNode, setStartNode] = useState<{ x: number; y: number, px: number, py: number} | null>(null);
   const [endNode, setEndNode] = useState<{ x: number; y: number, px: number, py: number} | null>(null);
@@ -10,6 +10,12 @@ export default function Home() {
   const [position,setPosition] = useState({x:0,y:0});
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement |null>(null);
+
+  const GRID_WIDTH = 400;
+  const GRID_HEIGHT = 300;
+
+  const mapRef = useRef<HTMLDivElement | null>(null);
+
 
   const toggleMusic = () => {
     if(audioRef.current){
@@ -55,8 +61,12 @@ export default function Home() {
     const rawY = e.clientY - rect.top;
     const pixelX = (rawX-position.x) / scale;
     const pixelY = (rawY-position.y) / scale;
-    const gridX = Math.floor((pixelX / 800)*400);
-    const gridY = Math.floor((pixelY / 600)*300);
+    const mapWidth = rect.width;
+    const mapHeight = rect.height;
+    const rawGridX = Math.floor((pixelX / mapWidth) * GRID_WIDTH);
+    const rawGridY = Math.floor((pixelY / mapHeight) * GRID_HEIGHT);
+    const gridX = Math.max(0, Math.min(399, rawGridX));
+    const gridY = Math.max(0, Math.min(299, rawGridY));
 
     if(!startNode) {
       setStartNode({ x: gridX, y: gridY, px: pixelX, py: pixelY });
@@ -99,6 +109,16 @@ export default function Home() {
     }
   };
 
+  const mapWidth =  mapRef.current?.clientWidth ?? 1;
+  const mapHeight = mapRef.current?.clientHeight ?? 1;
+
+  const pathPoints = path
+      .map(
+          p =>
+              `${((p.px + 0.5) / 400) * mapWidth},${((p.py + 0.5) / 300) * mapHeight}`
+      )
+      .join(" ");
+
   return (
     <main className="h-screen overflow-hidden p-6 bg-[#0b1120]/95 flex flex-row lg:flex-row gap-6 text-slate-200 font-sans relative">
 
@@ -106,7 +126,7 @@ export default function Home() {
       <audio ref={audioRef} src="/Song of Storms.mp3" loop />
       <button onClick={toggleMusic} style={{ fontFamily: "'Barlow Condensed', sans-serif" }} className={`absolute top-7 right-9 z-50 w-12 h-12 rounded-full border transition-all flex items-center justify-center shadow-lg ${ isPlaying ? "border-green-400/50 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.4)] bg-green-950/20" : "border-cyan-900/50 text-cyan-800 opacity-60 hover:opacity-100 hover:border-cyan-600 bg-slate-900/40" }`}> <span className ="text-lg">{isPlaying ? "🔊" : "🔇"}</span></button>
       {/* <Map area /> */}
-      <div className="relative w-[70%] h-full min-h-[500px] bg-[#080d1a] rounded-3xl overflow-hidden scrollbar-hide border-2 border-cyan-400 shadow-[0_0_15px_2px_rgba(34,211,238,0.5)] cursor-crosshair" onWheel={handleWheel} onClick={handleMapClick}>
+      <div ref={mapRef} className="relative w-[70%] h-full min-h-[500px] bg-[#080d1a] rounded-3xl overflow-hidden scrollbar-hide border-2 border-cyan-400 shadow-[0_0_15px_2px_rgba(34,211,238,0.5)] cursor-crosshair" onWheel={handleWheel} onClick={handleMapClick}>
         <div className="relative h-full w-full" style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`, transformOrigin: '0 0',willChange: 'transform'}}>  
         <img src="/map.jpg" alt="Map" className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-80" />
         {startNode && (<div className="absolute w-4 h-4 bg-[#22c55e] border-2 border-cyan-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-lg z-10" style={{ left: startNode.px, top: startNode.py }}/>)}
@@ -131,9 +151,9 @@ export default function Home() {
             </filter>
           </defs>
           {/* Texture*/}
-          <polyline points={path.map(p => `${p.px},${p.py}`).join(' ')} fill="none" stroke="#22d3ee" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" filter="url(#Draw)" className="draw-path opacity-90"/>
+          <polyline points={pathPoints} fill="none" stroke="#22d3ee" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" filter="url(#Draw)" className="draw-path opacity-90"/>
           {/* Glow*/}
-          <polyline points={path.map(p => `${p.px},${p.py}`).join(' ')} fill="none" stroke="#a5f3fc" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" filter="url(#Glow)" className="glow-path opacity-80"/>
+          <polyline points={pathPoints} fill="none" stroke="#a5f3fc" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" filter="url(#Glow)" className="glow-path opacity-80"/>
         </svg>
         )}
       </div>

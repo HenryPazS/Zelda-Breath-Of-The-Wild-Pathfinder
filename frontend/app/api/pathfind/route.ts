@@ -1,28 +1,50 @@
-import {NextResponse} from 'next/server';
-import { start } from 'repl';
+import { NextResponse } from 'next/server';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import path from 'path';
+
+const execAsync = promisify(exec);
 
 export async function POST(request: Request) {
-    try{
-        const body =await request.json();
-        const {startNode, endNode, algorithm} = body;
+    try {
+        const body = await request.json();
+        const { startNode, endNode, algorithm } = body;
 
-        console.log(`Received pathfinding request:`);
-        console.log(`Algorithm: ${algorithm}`);
-        console.log(`Start: [${startNode.x}, ${startNode.y}]`);
-        console.log(`End: [${endNode.x}, ${endNode.y}]`);
+        // go from frontend → project root → cmake-build-debug
+        const buildDir = path.join(
+            process.cwd(),
+            '..',
+            '..',
+            'cmake-build-debug'
+        );
 
+        const exePath = path.join(buildDir, 'Project_2');
 
-        //Mock response for now
-        const mockPath = [
-            {px:startNode.px, py: startNode.py},
-            {px: startNode.px + (endNode.px - startNode.px)*0.25, py: startNode.py + (endNode.py - startNode.py)*0.25},
-            {px: startNode.px + (endNode.px - startNode.px)*0.50, py: startNode.py + (endNode.py - startNode.py)*0.50},
-            {px: startNode.px + (endNode.px - startNode.px)*0.75, py: startNode.py + (endNode.py - startNode.py)*0.75},
-            {px: endNode.px, py: endNode.py}
-        ];
+        const command =
+            `"${exePath}" ${startNode.x} ${startNode.y} ${endNode.x} ${endNode.y} "${algorithm}"`;
 
-        return NextResponse.json({ success: true,path: mockPath});
-    }catch(error){
-        return NextResponse.json({ success: false, error: 'Failed to handle request' }, { status: 500 });
+        console.log("RUN:", command);
+
+        const { stdout, stderr } =
+            await execAsync(command, { cwd: buildDir });
+
+        if (stderr) {
+            console.error(stderr);
+        }
+
+        const parsedPath = JSON.parse(stdout.trim());
+
+        return NextResponse.json({
+            success: true,
+            path: parsedPath
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        return NextResponse.json(
+            { success: false },
+            { status: 500 }
+        );
     }
 }
