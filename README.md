@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Zelda Breath Of The Wild Pathfinder
 
-## Getting Started
+Interactive pathfinder visualizer built with a C++ backend engine and a Next.js frontend. This project simulates the Sheikah slate interface from the game "The Legend of Zelda : Breath of The Wild" to demonstrate weighted pathfinding algorithms traversing through Hyrule.
 
-First, run the development server:
+## Important Features:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+* Weighted Terrain Cost: Real time path finding calculation, including grass(1), Forest(2), Desert(3), Mountain(5), and Water(10).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+* Algorithm Implementation: custom built Dijkstra's and A* search algorithms performance comparison.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+* Interactive UI: Full zoom/pan support, custom map markers, sound effects, and real time animation display for the final path.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+* Immersive Aesthetic: Hylia Serif font, Sheikah SFX, integrated background music, with the ability to decrease/increase volume.
 
-## Learn More
+## Tech Used
 
-To learn more about Next.js, take a look at the following resources:
+* Engine: C++
+* Frontend: React, Next.js, Tailwind CSS 4
+* Bridge: Node.js child_process API for native execution.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Data Structures Used:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The core engine was implemented from scratch using C++ for maximum performance and fast traversal.
 
-## Deploy on Vercel
+* Dijkstra's Algorithm: Guarantees shortest path by exploring all directions based on cumulative cost.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+* A*: Optimized traversal using Manhattan Distance heuristic to prioritize nodes closer to the destination.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+* Note: 8 way movement was implemented to ensure diagonal traversal with distance corrected costs for a more natural path.
+
+
+## Requirements:
+
+* C++ compiler (either g++ or clang)
+* Node.js (v18+)
+* npm
+
+## Getting Started:
+
+* Navigate to the root directory and compile the pathfinder engine: g++ -O3 pathfinder.cpp -o pathfinder
+
+* Navigate to the "frontend" folder, by using "cd frontend" and "npm install"
+
+* Run development server: "npm run dev" and copy the link locally provided by the terminal, usually looks like "http://localhost:3000"
+
+## Team Members and GitHub usernames:
+* Henry Paz, HenryPazS
+* Bruno Carballo, Brunocar15
+
+Screenshot:
+
+![Zelda Map Pathfinding Demo](./frontend/app/Images/zelda_pathfinding_ss.png)
