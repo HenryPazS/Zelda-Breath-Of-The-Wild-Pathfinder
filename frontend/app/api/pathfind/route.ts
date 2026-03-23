@@ -10,15 +10,9 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { startNode, endNode, algorithm } = body;
 
-        // go from frontend → project root → cmake-build-debug
-        const buildDir = path.join(
-            process.cwd(),
-            '..',
-            '..',
-            'cmake-build-debug'
-        );
+        const projectRoot = path.join(process.cwd(), '..');
 
-        const exePath = path.join(buildDir, 'Project_2');
+        const exePath = path.join(projectRoot, 'pathfinder.exe');
 
         const command =
             `"${exePath}" ${startNode.x} ${startNode.y} ${endNode.x} ${endNode.y} "${algorithm}"`;
@@ -26,7 +20,7 @@ export async function POST(request: Request) {
         console.log("RUN:", command);
 
         const { stdout, stderr } =
-            await execAsync(command, { cwd: buildDir });
+            await execAsync(command, { cwd: projectRoot });
 
         if (stderr) {
             console.error(stderr);

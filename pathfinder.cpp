@@ -33,6 +33,11 @@ std::vector<std::pair<int, int>> GNeigh(int x, int y, int width, int height) {
         neighbors.push_back({x, y - 1});
     }
 
+    if ( x + 1 < width && y + 1 < height) neighbors.push_back({x + 1, y + 1});
+    if ( x - 1 >= 0 && y + 1 < height) neighbors.push_back({x - 1, y + 1});
+    if ( x + 1 < width && y - 1 >= 0) neighbors.push_back({x + 1, y - 1});
+    if ( x - 1 >= 0 && y - 1 >= 0) neighbors.push_back({x - 1, y - 1});
+
     return neighbors;
 }
 
@@ -140,7 +145,7 @@ int main(int argc, char* argv[]){
     std::string algorithm = argv[5];
 
 
-    std::ifstream f("../Zelda-Breath-Of-The-Wild-Pathfinder/nodes.json");
+    std::ifstream f("nodes.json");
 
     if (!f) {
         std::cerr << "Failed to open nodes.json" << std::endl;
