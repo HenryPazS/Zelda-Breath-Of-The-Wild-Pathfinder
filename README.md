@@ -43,6 +43,14 @@ The core engine was implemented from scratch using C++ for maximum performance a
 
 * Run development server: "npm run dev" and copy the link locally provided by the terminal, usually looks like "http://localhost:3000"
 
+If you are using CMake (ex. CLion):
+run the following commands:
+cmake -B build
+cmake --build build
+
+And proceed to run the frontend with previous steps.
+
+
 ## Team Members and GitHub usernames:
 * Henry Paz, HenryPazS
 * Bruno Carballo, Brunocar15
