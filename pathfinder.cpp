@@ -126,7 +126,7 @@ private:
 };
 
 int heuristic(int x, int y, int endX, int endY) {
-    return std::abs(x - endX) + std::abs(y - endY);
+    return std::max(std::abs(x - endX), std::abs(y - endY));
 }
 
 
